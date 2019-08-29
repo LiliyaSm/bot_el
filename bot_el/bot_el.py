@@ -38,7 +38,8 @@ class Mouse(object):
         nx = int(x*65535/self.x_res)
         ny = int(y*65535/self.y_res)
         win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
-        time.sleep(1)
+        n = random.randint(2,3) 
+        time.sleep(n)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)
         win32api.Sleep(1)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)#completely optional. But nice for debugging purposes.
@@ -53,6 +54,16 @@ def get_cords():  #вывод координат в консоль
     x,y = win32api.GetCursorPos()
     print (x,y)
 
+def comparison(box, name, path):
+    #name - name of large_image
+    #path - path to sample "sample\\question_sample.png"
+    im = ImageGrab.grab(box).save(os.getcwd() + '\\' + name, "PNG")   
+    method = cv2.TM_SQDIFF_NORMED
+    large_image = cv2.imread(name)
+    sample_IMG = cv2.imread(path)  
+    result = cv2.matchTemplate(sample_IMG, large_image, method)
+    return result
+
 def is_mine():    
     method = cv2.TM_SQDIFF_NORMED
     large_image = cv2.imread("my.png")
@@ -64,11 +75,74 @@ def is_mine():
         return True
     return False
 
-def factory():
-    im = ImageGrab.grab()
-    im_my = im.save(os.getcwd() + '\\factory.png', 'PNG')
+def checking_cafe():
+    name = 'checking_cafe.png'
+    path = "sample\\question_sample.png"
+    box = (1135, 429, 1178, 453)
+    result = comparison(box, name, path)
+    
+    if (result[0][0] < 0.05):        #there is question mark
+        mouse.left_click(1250, 565) #open cafe
+        print("open cafe")
+        time.sleep(.5)
+        buttons = [(616, 493, 730, 525), (616, 642, 730, 675), (616, 792, 730, 825)]
+        for i in range(3):
+            result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
+            print(result[0][0])
+            if (result[0][0] > 0.1): #if there is no overlap
+                mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
+                time.sleep(2)
+        mouse.left_click(1505,210) #close window
+        return True
+    return False
 
+def checking_factory():
+    name = 'check_factory.png'
+    path = "sample\\check_box.png"
+    box = (70, 1010, 85, 1025)
+    result = comparison(box, name, path)
+    if (result[0][0] < 0.05):        #there is green sign
+        mouse.left_click(50, 1035) #open factory
+        print("open factory")
+        time.sleep(.5)
+        buttons = [(964, 785, 1077, 816), (1149, 785, 1262, 816), (1337, 785, 1450, 816)]
+        for i in range(3):
+            result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
+            print(result[0][0])
+            if (result[0][0] > 0.1): #if there is no overlap
+                mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
+                time.sleep(2)
+        mouse.left_click(1505,210) #close window
+        return True
+    return False
 
+def check_feeding():
+ 
+    mouse.left_click(65, 300) #open animal window in any case
+    print("open animal")
+    time.sleep(.5)
+    buttons = [(853, 748, 963, 779), (1051, 748, 1164, 779), (1245, 748, 1358, 779)]
+    for i in range(3):
+        result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
+        print(result[0][0])
+        if (result[0][0] > 0.1): #if there is no overlap
+            mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
+            time.sleep(2)
+    mouse.left_click(1425,205) #close window
+
+def check_missions():
+    name = 'check_missions.png'
+    path = "sample\\check_box.png"
+    box = (91, 151, 105, 165)
+    result = comparison(box, name, path)
+    if (result[0][0] < 0.05):        #there is green sign
+        mouse.left_click(50, 1035) #open factory
+        print("open missions")
+        time.sleep(.5)
+        buttons = [(643, 541), (650, 680), (636, 776)]
+        for i in range(3):
+            mouse.left_click(buttons[i][0], buttons[i][1])
+    mouse.left_click(1425,205) #close window
 
 def is_last(): 
     method = cv2.TM_SQDIFF_NORMED
@@ -89,26 +163,15 @@ def change_friend(i):
     position = (210+i*75, 1030) # delta = i*75 1st friend, overall = 15
     print(position)
     mouse.left_click(position[0], position[1])
-    n = random.randint(3,5) 
+    n = random.randint(3,6) 
+    print("random ",  n)
     time.sleep(n)
 
 def crop_img(img):
 
-    #crop_img = img[0:20, 2:14] # hours 12
-    #cv2.imwrite("0.png", crop_img)
-    #hours = checkPotato("0.png")
-
-
     crop_img1 = img[0:20, 33:45] # minutes десятки
     cv2.imwrite("1.png", crop_img1)
     minutes0 = checkPotato("1.png")
-
-
-    #crop_img2 = img[0:20, 44:56] # minutes единицы
-
-    #cv2.imwrite("2.png", crop_img2)
-    #minutes1 = checkPotato("2.png")
-
 
     #cv2.imshow("cropped", crop_img)
     cv2.waitKey(0)
@@ -154,8 +217,8 @@ def check_question():
 def main():
     i = 12
     time.sleep(5)
-    screen_grab()
-
+    
+    
     while(True):        
         if is_last():
             i = 0
@@ -164,10 +227,12 @@ def main():
 
         if is_mine():
             print("my")
+            checking_cafe()
+            checking_factory()
+            check_feeding()
             check_question()
             i = change_i(i)   #  меняю счетчик из-за своей страницы
             print("NEW ", i)
-            #factory()
             change_friend(i)
             screen_grab()
             print("NEW ",i)
