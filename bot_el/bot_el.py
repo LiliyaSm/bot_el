@@ -17,10 +17,9 @@ user32 = windll.user32
 user32.SetProcessDPIAware()
 
 
-def screenGrab():
+def screen_grab():
     im = ImageGrab.grab()
     im_my = im.save(os.getcwd() + '\\overall.png', 'PNG') 
-
 
     box0 = (1660, 1013, 1910, 1063)
     im = ImageGrab.grab(box0)
@@ -30,21 +29,27 @@ def screenGrab():
     im = ImageGrab.grab(box)
     im_question = im.save(os.getcwd() + '\\question_small.png', 'PNG') #
 
+class Mouse(object):
+    def __init__(self):
+        self.x_res = win32api.GetSystemMetrics(0)
+        self.y_res = win32api.GetSystemMetrics(1)
 
-def left_click():
-    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,0,0)
-    time.sleep(.5)
-    #print ('left Down')
-
-    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,0,0)
-    #print ("Click.")          #completely optional. But nice for debugging purposes.
+    def left_click(self, x, y):
+        nx = int(x*65535/self.x_res)
+        ny = int(y*65535/self.y_res)
+        win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
+        time.sleep(1)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)
+        win32api.Sleep(1)
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)#completely optional. But nice for debugging purposes.
+        win32api.Sleep(2)
+mouse = Mouse()
 
 def mouse_pos(cord):
     win32api.SetCursorPos((cord[0], cord[1]))
 
-#вывод координат в консоль
 
-def get_cords():
+def get_cords():  #вывод координат в консоль
     x,y = win32api.GetCursorPos()
     print (x,y)
 
@@ -57,7 +62,6 @@ def is_mine():
     if (result[0][0] < 0.05):
         print("MY")
         return True
-
     return False
 
 def factory():
@@ -73,30 +77,18 @@ def is_last():
     result1 = cv2.matchTemplate(sample_end, large_image, method)
 
     if (result1[0][0] < 0.1):
-        mouse_pos((1315, 303)) #1025, 1785
+        mouse.left_click(1315, 303) #1025, 1785
         time.sleep(2)
-        left_click()
+        mouse.left_click(126, 1053)
         time.sleep(2)
-        mouse_pos((126, 1053))
-        time.sleep(2)
-        left_click()
         return True
-
-def open_chest():
-    #location on the chest
-    mouse_pos((460, 750))
-    time.sleep(.5)
-    left_click()
-    time.sleep(.1)
-
+    
 
 def change_friend(i):
-    j = i*70
-    position = (210+i*75, 1030) # delta = i*70 1st friend, overall = 15
+
+    position = (210+i*75, 1030) # delta = i*75 1st friend, overall = 15
     print(position)
-    mouse_pos(position)
-    time.sleep(1)
-    left_click()
+    mouse.left_click(position[0], position[1])
     n = random.randint(3,5) 
     time.sleep(n)
 
@@ -121,65 +113,66 @@ def crop_img(img):
     #cv2.imshow("cropped", crop_img)
     cv2.waitKey(0)
 
+def change_i(i):
+    if i<14:
+        change_friend(i+4)#!!!!! check
+        screen_grab()
+        check_question()       
+        i=i+2
+        return i
+    elif i>=14:
 
-def check_question(tile):
+        mouse.left_click(1532, 1025)
+        time.sleep(3) #loading next friends
+                
+        change_friend(i-11)
+        time.sleep(.5)
+        check_question()
+
+        mouse_pos((500,810)) #сбор палочек
+        time.sleep(.5)
+        i = i - 13
+        return i
+   
+
+def check_question():
 
     method = cv2.TM_SQDIFF_NORMED
-    large_image = cv2.imread(tile)
+    large_image = cv2.imread("question_small.png")
     sampleIMG = cv2.imread("sample\\question_sample.png")
     method = cv2.TM_SQDIFF_NORMED    
     result = cv2.matchTemplate(sampleIMG, large_image, method)
     print(result[0][0])
 
     if (result[0][0] < 0.05):
-        print("OK")
-        return True
+        print("OPEN")
+        mouse.left_click(460, 750) #open chest
+        time.sleep(.1)
     return False
 
 
 def main():
-    i = 0
-    time.sleep(7)
-    screenGrab()
+    i = 12
+    time.sleep(5)
+    screen_grab()
+
     while(True):        
         if is_last():
             i = 0
         change_friend(i)
-        screenGrab() #creates "question_small.png" and my.png        print(i)   
+        screen_grab() #creates "question_small.png" and my.png        print(i)   
 
         if is_mine():
-            print("My")
-            if check_question("question_small.png"):
-                open_chest()
+            print("my")
+            check_question()
+            i = change_i(i)   #  меняю счетчик из-за своей страницы
+            print("NEW ", i)
+            #factory()
+            change_friend(i)
+            screen_grab()
+            print("NEW ",i)
 
-
-            if i<14:
-                change_friend(i+4)
-                i=i+1
-            elif i>=14:
-                mouse_pos((1532, 1025))
-                time.sleep(.5)
-                left_click()
-                time.sleep(3) #loading next friends
-                
-                change_friend(i-11)
-                time.sleep(.5)
-                if check_question("question_small.png"):
-                    open_chest()
-
-                mouse_pos((500,810)) #сбор палочек
-                time.sleep(.5)
-                temp = i - 13
-                i = temp
-
-                factory()
-
-
-                change_friend(i)
-        print(i)
-
-        if check_question("question_small.png"):
-            open_chest()
+        check_question()
 
         mouse_pos((500,810)) #сбор палочек
         time.sleep(.5)
@@ -188,9 +181,7 @@ def main():
             i = i+1
         else:
             i = 0
-            mouse_pos((1785, 1025))
-            time.sleep(.5)
-            left_click()
+            mouse.left_click(1785, 1025)
             time.sleep(3) #loading next friends
         
 
@@ -218,8 +209,6 @@ if __name__ == '__main__':
     #        print(sample)
     #        return sample
     #return False
-
-
 
 
 
