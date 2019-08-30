@@ -38,12 +38,19 @@ class Mouse(object):
         nx = int(x*65535/self.x_res)
         ny = int(y*65535/self.y_res)
         win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
-        n = random.randint(2,3) 
-        time.sleep(n)
+        n = random.randint(700,800) 
+        #time.sleep(5)
+        win32api.Sleep(n)   
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)
-        win32api.Sleep(1)
+        win32api.Sleep(200)
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)#completely optional. But nice for debugging purposes.
-        win32api.Sleep(2)
+        win32api.Sleep(200)
+
+    def move(self, x, y):
+        nx = int(x*65535/self.x_res)
+        ny = int(y*65535/self.y_res)
+        win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
+
 mouse = Mouse()
 
 def mouse_pos(cord):
@@ -80,7 +87,7 @@ def checking_cafe():
     path = "sample\\question_sample.png"
     box = (1135, 429, 1178, 453)
     result = comparison(box, name, path)
-    
+    time.sleep(2)  
     if (result[0][0] < 0.05):        #there is question mark
         mouse.left_click(1250, 565) #open cafe
         print("open cafe")
@@ -101,6 +108,7 @@ def checking_factory():
     path = "sample\\check_box.png"
     box = (70, 1010, 85, 1025)
     result = comparison(box, name, path)
+
     if (result[0][0] < 0.05):        #there is green sign
         mouse.left_click(50, 1035) #open factory
         print("open factory")
@@ -117,10 +125,9 @@ def checking_factory():
     return False
 
 def check_feeding():
- 
-    mouse.left_click(65, 300) #open animal window in any case
-    print("open animal")
-    time.sleep(.5)
+    time.sleep(2)
+    mouse.left_click(65, 280) #65, 280
+    time.sleep(2)
     buttons = [(853, 748, 963, 779), (1051, 748, 1164, 779), (1245, 748, 1358, 779)]
     for i in range(3):
         result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
@@ -128,20 +135,34 @@ def check_feeding():
         if (result[0][0] > 0.1): #if there is no overlap
             mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
             time.sleep(2)
+    mouse.left_click(960, 831) # click in case of level up
     mouse.left_click(1425,205) #close window
 
 def check_missions():
+    time.sleep(2)
     name = 'check_missions.png'
     path = "sample\\check_box.png"
     box = (91, 151, 105, 165)
+
     result = comparison(box, name, path)
     if (result[0][0] < 0.05):        #there is green sign
-        mouse.left_click(50, 1035) #open factory
+        time.sleep(2)
+
+        mouse.left_click(69, 177)
         print("open missions")
         time.sleep(.5)
         buttons = [(643, 541), (650, 680), (636, 776)]
         for i in range(3):
             mouse.left_click(buttons[i][0], buttons[i][1])
+            name = 'check_missions1.png'
+            path = "sample\\check_missions_sample.png"
+            box = (1010, 673, 1180, 715)
+            result = comparison(box, name, path)
+            if (result[0][0] > 0.05):
+               mouse.left_click(1050,700) #there is no overlap        
+               time.sleep(2)
+               mouse.left_click(963,803)
+
     mouse.left_click(1425,205) #close window
 
 def is_last(): 
@@ -151,7 +172,8 @@ def is_last():
     result1 = cv2.matchTemplate(sample_end, large_image, method)
 
     if (result1[0][0] < 0.1):
-        mouse.left_click(1315, 303) #1025, 1785
+        mouse.left_click(841, 722) # it could be the chest message
+        mouse.left_click(1315, 303) #1025, 1785 close friend warning window
         time.sleep(2)
         mouse.left_click(126, 1053)
         time.sleep(2)
@@ -215,10 +237,10 @@ def check_question():
 
 
 def main():
-    i = 12
-    time.sleep(5)
-    
-    
+    i = 10
+    time.sleep(5)   
+    screen_grab()
+
     while(True):        
         if is_last():
             i = 0
@@ -228,7 +250,10 @@ def main():
         if is_mine():
             print("my")
             checking_cafe()
+            time.sleep(2)
             checking_factory()
+            time.sleep(3)
+            check_missions()
             check_feeding()
             check_question()
             i = change_i(i)   #  меняю счетчик из-за своей страницы
