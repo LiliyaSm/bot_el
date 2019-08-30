@@ -2,8 +2,7 @@ from PIL import ImageGrab
 from PIL import Image, ImageEnhance
 import PIL
 import cv2
-import image_slicer
-import pytesseract #C:\Program Files\Tesseract-OCR
+#import pytesseract #C:\Program Files\Tesseract-OCR
 import os
 import time
 import numpy as np
@@ -11,6 +10,8 @@ from ctypes import windll # решение проблемы с расширен�
 import win32api, win32con
 import random
 import logging
+from RepeatedTimer import RepeatedTimer
+
 
 #решение проблемы с расширением экрана
 user32 = windll.user32
@@ -28,6 +29,7 @@ def screen_grab():
     box = (435, 644, 479, 669) #box = (431, 629, 486, 682) 
     im = ImageGrab.grab(box)
     im_question = im.save(os.getcwd() + '\\question_small.png', 'PNG') #
+
 
 class Mouse(object):
     def __init__(self):
@@ -57,6 +59,8 @@ def mouse_pos(cord):
     win32api.SetCursorPos((cord[0], cord[1]))
 
 
+
+
 def get_cords():  #вывод координат в консоль
     x,y = win32api.GetCursorPos()
     print (x,y)
@@ -82,6 +86,14 @@ def is_mine():
         return True
     return False
 
+def check_buttons(buttons):
+    for i in range(3):
+        result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
+        print(result[0][0])
+        if (result[0][0] > 0.1): #if there is no overlap
+            mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
+            time.sleep(2)
+
 def checking_cafe():
     name = 'checking_cafe.png'
     path = "sample\\question_sample.png"
@@ -93,12 +105,7 @@ def checking_cafe():
         print("open cafe")
         time.sleep(.5)
         buttons = [(616, 493, 730, 525), (616, 642, 730, 675), (616, 792, 730, 825)]
-        for i in range(3):
-            result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
-            print(result[0][0])
-            if (result[0][0] > 0.1): #if there is no overlap
-                mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
-                time.sleep(2)
+        check_buttons(buttons)
         mouse.left_click(1505,210) #close window
         return True
     return False
@@ -114,12 +121,7 @@ def checking_factory():
         print("open factory")
         time.sleep(.5)
         buttons = [(964, 785, 1077, 816), (1149, 785, 1262, 816), (1337, 785, 1450, 816)]
-        for i in range(3):
-            result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
-            print(result[0][0])
-            if (result[0][0] > 0.1): #if there is no overlap
-                mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
-                time.sleep(2)
+        check_buttons(buttons)
         mouse.left_click(1505,210) #close window
         return True
     return False
@@ -129,12 +131,7 @@ def check_feeding():
     mouse.left_click(65, 280) #65, 280
     time.sleep(2)
     buttons = [(853, 748, 963, 779), (1051, 748, 1164, 779), (1245, 748, 1358, 779)]
-    for i in range(3):
-        result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
-        print(result[0][0])
-        if (result[0][0] > 0.1): #if there is no overlap
-            mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
-            time.sleep(2)
+    check_buttons(buttons)
     mouse.left_click(960, 831) # click in case of level up
     mouse.left_click(1425,205) #close window
 
@@ -143,11 +140,9 @@ def check_missions():
     name = 'check_missions.png'
     path = "sample\\check_box.png"
     box = (91, 151, 105, 165)
-
     result = comparison(box, name, path)
     if (result[0][0] < 0.05):        #there is green sign
         time.sleep(2)
-
         mouse.left_click(69, 177)
         print("open missions")
         time.sleep(.5)
@@ -172,7 +167,7 @@ def is_last():
     result1 = cv2.matchTemplate(sample_end, large_image, method)
 
     if (result1[0][0] < 0.1):
-        mouse.left_click(841, 722) # it could be the chest message
+        mouse.left_click(920, 722) # it could be the chest message
         mouse.left_click(1315, 303) #1025, 1785 close friend warning window
         time.sleep(2)
         mouse.left_click(126, 1053)
@@ -200,7 +195,7 @@ def crop_img(img):
 
 def change_i(i):
     if i<14:
-        change_friend(i+4)#!!!!! check
+        change_friend(i+4)
         screen_grab()
         check_question()       
         i=i+2
@@ -219,6 +214,12 @@ def change_i(i):
         i = i - 13
         return i
    
+def change_glade():
+    flag = True # its time to check another glade
+    print ("Doing stuff...")
+
+    return flag
+
 
 def check_question():
 
@@ -235,32 +236,62 @@ def check_question():
         time.sleep(.1)
     return False
 
+class GameLogic(object):
+    def __init__(self):
+        self._flag = False
+        
+    def change_glade(self):
+        self._flag = True # its time to check another glade
+        print(self._flag)
+    
+    def run(self):
+        rt = RepeatedTimer(300, self.change_glade) # it auto-starts, no need of rt.start()
+        if self._flag:
+            print(time.localtime())
+            check_feeding()
+            mouse.left_click(1860, 1035)
+            buttons = [(645, 430) , (840, 425), (1060, 460)]
+            for i in range(3):                
+                mouse.left_click(buttons[i][0], buttons[i][1])
+                time.sleep(4)
+                check_feeding()
+                check_missions()
+                mouse.left_click(1860, 1035)
+
+            mouse.left_click(1272, 453)
+            self._flag = False
+
+
+game = GameLogic()
 
 def main():
     i = 10
     time.sleep(5)   
-    screen_grab()
+    screen_grab()  
+    
 
+    #flag = change_glade()
+    #print(flag)
     while(True):        
         if is_last():
             i = 0
         change_friend(i)
-        screen_grab() #creates "question_small.png" and my.png        print(i)   
+        screen_grab() #creates "question_small.png" and my.png        print(i)        
 
         if is_mine():
+            game.run()
             print("my")
             checking_cafe()
             time.sleep(2)
             checking_factory()
             time.sleep(3)
             check_missions()
-            check_feeding()
             check_question()
             i = change_i(i)   #  меняю счетчик из-за своей страницы
             print("NEW ", i)
             change_friend(i)
             screen_grab()
-            print("NEW ",i)
+            print("NEW NEXT ",i)
 
         check_question()
 
