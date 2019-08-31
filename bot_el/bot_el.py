@@ -51,13 +51,65 @@ class Mouse(object):
     def move(self, x, y):
         nx = int(x*65535/self.x_res)
         ny = int(y*65535/self.y_res)
+
         win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
+        win32api.Sleep(200)
+
+    def drag(self, x, y, x_next, y_next, release):
+        nx = int(x*65535/self.x_res)
+        ny = int(y*65535/self.y_res)
+        win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
+        n = random.randint(700,800) 
+        #time.sleep(5)
+        win32api.Sleep(n)   
+        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)
+        win32api.Sleep(200)
+        self.move(x_next, y_next)
+        if release:
+            win32api.Sleep(150)
+            win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_LEFTUP,x, y, 0, 0)
+
+    def left_up(self):                
+        win32api.Sleep(150)
+        win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_LEFTUP, 0, 0)
 
 mouse = Mouse()
 
 def mouse_pos(cord):
     win32api.SetCursorPos((cord[0], cord[1]))
 
+
+
+def tropic_farm(): 
+    mouse.left_click(60, 410)
+    mouse.drag(1000, 800,460, 400, False) #460, 400
+
+    list = []
+    for i in range(460, 960, 100): #x увеличила на 100
+        for j in range(400, 900, 100): #y увеличила на 100
+            list.append((i,j))
+    random.shuffle(list)
+    while True:        
+        #index = list.index(random.choice(list))
+        #print(random.choice(list))
+        print(list)
+        if list:
+            cords = (list.pop())
+            mouse.move(cords[0], cords[1])
+        else:
+            mouse.left_up()
+            break
+
+    mouse.left_click(1100, 440)
+    mouse.left_click(1100, 540)
+    mouse.left_click(1100, 640)
+
+    mouse.left_click(1315, 440)
+    mouse.left_click(1315, 540)
+    mouse.left_click(1315, 640)
+
+    mouse.left_click(1510, 230)
+    
 
 
 
@@ -238,7 +290,7 @@ def check_question():
 
 class GameLogic(object):
     def __init__(self):
-        self._flag = False
+        self._flag = True
         
     def change_glade(self):
         self._flag = True # its time to check another glade
@@ -249,6 +301,7 @@ class GameLogic(object):
         if self._flag:
             print(time.localtime())
             check_feeding()
+            tropic_farm()
             mouse.left_click(1860, 1035)
             buttons = [(645, 430) , (840, 425), (1060, 460)]
             for i in range(3):                
@@ -257,7 +310,7 @@ class GameLogic(object):
                 check_feeding()
                 check_missions()
                 mouse.left_click(1860, 1035)
-
+            print("checking glade")
             mouse.left_click(1272, 453)
             self._flag = False
 
@@ -265,13 +318,11 @@ class GameLogic(object):
 game = GameLogic()
 
 def main():
-    i = 10
+    i = 19
     time.sleep(5)   
-    screen_grab()  
-    
+    screen_grab()    
 
-    #flag = change_glade()
-    #print(flag)
+
     while(True):        
         if is_last():
             i = 0
