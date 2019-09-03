@@ -11,7 +11,9 @@ import win32api, win32con
 import random
 import logging
 from RepeatedTimer import RepeatedTimer
-
+import win32com.client
+from find_templ import find_templ
+from datetime import datetime
 
 #решение проблемы с расширением экрана
 user32 = windll.user32
@@ -22,7 +24,7 @@ def screen_grab():
     im = ImageGrab.grab()
     im_my = im.save(os.getcwd() + '\\overall.png', 'PNG') 
 
-    box0 = (1660, 1013, 1910, 1063)
+    box0 = (1830, 1026, 1905, 1060)
     im = ImageGrab.grab(box0)
     im_my = im.save(os.getcwd() + '\\my.png', 'PNG') 
 
@@ -40,11 +42,14 @@ class Mouse(object):
         nx = int(x*65535/self.x_res)
         ny = int(y*65535/self.y_res)
         win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
-        n = random.randint(700,800) 
+        n = random.randint(1700,2000) 
+        print(n)
         #time.sleep(5)
         win32api.Sleep(n)   
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)
-        win32api.Sleep(200)
+        win32api.Sleep(400)
+        #time.sleep(2)
+        print("click")
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)#completely optional. But nice for debugging purposes.
         win32api.Sleep(200)
 
@@ -78,7 +83,10 @@ mouse = Mouse()
 def mouse_pos(cord):
     win32api.SetCursorPos((cord[0], cord[1]))
 
-
+def reload():
+    shell = win32com.client.Dispatch('WScript.Shell')
+    shell.SendKeys('{F5}')
+    win32api.Sleep(30000)
 
 def tropic_farm(): 
     mouse.left_click(60, 410)
@@ -159,6 +167,7 @@ def checking_cafe():
         buttons = [(616, 493, 730, 525), (616, 642, 730, 675), (616, 792, 730, 825)]
         check_buttons(buttons)
         mouse.left_click(1505,210) #close window
+        time.sleep(2)
         return True
     return False
 
@@ -175,6 +184,7 @@ def checking_factory():
         buttons = [(964, 785, 1077, 816), (1149, 785, 1262, 816), (1337, 785, 1450, 816)]
         check_buttons(buttons)
         mouse.left_click(1505,210) #close window
+        time.sleep(2)
         return True
     return False
 
@@ -210,7 +220,7 @@ def check_missions():
                time.sleep(2)
                mouse.left_click(963,803)
 
-    mouse.left_click(1425,205) #close window
+        mouse.left_click(1425,205) #close window
 
 def is_last(): 
     method = cv2.TM_SQDIFF_NORMED
@@ -225,15 +235,25 @@ def is_last():
         mouse.left_click(126, 1053)
         time.sleep(2)
         return True
-    
+
+
+def is_friend(): 
+    method = cv2.TM_SQDIFF_NORMED
+    large_image = cv2.imread("my.png")
+    sample_end = cv2.imread("sample\\is_friend_sample.png")
+    result1 = cv2.matchTemplate(sample_end, large_image, method)
+
+    if (result1[0][0] < 0.1):
+        return True
+    else:
+        return False
+
 
 def change_friend(i):
 
-    position = (210+i*75, 1030) # delta = i*75 1st friend, overall = 15
-    print(position)
+    position = (210+i*75, 1015) # delta = i*75 1st friend, overall = 15
     mouse.left_click(position[0], position[1])
     n = random.randint(3,6) 
-    print("random ",  n)
     time.sleep(n)
 
 def crop_img(img):
@@ -247,33 +267,25 @@ def crop_img(img):
 
 def change_i(i):
     if i<14:
-        change_friend(i+4)
+        change_friend(i+3)
         screen_grab()
-        check_question()       
-        i=i+2
+        check_question()   
+        i=i+1
         return i
     elif i>=14:
-
         mouse.left_click(1532, 1025)
-        time.sleep(3) #loading next friends
-                
+        time.sleep(3) #loading next friends                
         change_friend(i-11)
         time.sleep(.5)
+        screen_grab()
         check_question()
-
-        mouse_pos((500,810)) #сбор палочек
-        time.sleep(.5)
         i = i - 13
         return i
    
-def change_glade():
-    flag = True # its time to check another glade
-    print ("Doing stuff...")
-
-    return flag
-
 
 def check_question():
+    mouse_pos((500,810)) #сбор палочек
+    time.sleep(.5)
 
     method = cv2.TM_SQDIFF_NORMED
     large_image = cv2.imread("question_small.png")
@@ -285,77 +297,108 @@ def check_question():
     if (result[0][0] < 0.05):
         print("OPEN")
         mouse.left_click(460, 750) #open chest
-        time.sleep(.1)
+        time.sleep(.5)
     return False
 
 class GameLogic(object):
     def __init__(self):
-        self._flag = True
+        self._flag = False
         
     def change_glade(self):
         self._flag = True # its time to check another glade
         print(self._flag)
     
     def run(self):
-        rt = RepeatedTimer(300, self.change_glade) # it auto-starts, no need of rt.start()
+        rt = RepeatedTimer(5400, self.change_glade) # it auto-starts, no need of rt.start()
         if self._flag:
-            print(time.localtime())
-            check_feeding()
-            tropic_farm()
-            mouse.left_click(1860, 1035)
-            buttons = [(645, 430) , (840, 425), (1060, 460)]
-            for i in range(3):                
+            print(time.localtime())   
+            buttons = [(645, 430) , (840, 425), (1060, 460), (1272, 453)]
+            for i in range(4): 
+                mouse.left_click(1860, 1035)               
                 mouse.left_click(buttons[i][0], buttons[i][1])
                 time.sleep(4)
                 check_feeding()
                 check_missions()
-                mouse.left_click(1860, 1035)
+                
             print("checking glade")
-            mouse.left_click(1272, 453)
+            print("sleep")
+            time.sleep(300)
+            
+                
             self._flag = False
-
 
 game = GameLogic()
 
 def main():
-    i = 19
+    i = 0
     time.sleep(5)   
-    screen_grab()    
+ 
+    while(True):
+        screen_grab()  #creates "question_small.png" and my.png        print(i)      
 
-
-    while(True):        
-        if is_last():
-            i = 0
-        change_friend(i)
-        screen_grab() #creates "question_small.png" and my.png        print(i)        
-
-        if is_mine():
-            game.run()
-            print("my")
-            checking_cafe()
-            time.sleep(2)
-            checking_factory()
-            time.sleep(3)
-            check_missions()
+        if is_friend():    
             check_question()
+  
+            if i < 20:
+                i = i+1
+            else:
+                i = 0
+                mouse.left_click(1785, 1025)
+                time.sleep(3) #loading next friends
+
+        elif is_mine():
+
+            check_question()
+            game.run()
+            print("my")            
+            tropic_farm()
+            checking_factory()
             i = change_i(i)   #  меняю счетчик из-за своей страницы
             print("NEW ", i)
-            change_friend(i)
-            screen_grab()
-            print("NEW NEXT ",i)
-
-        check_question()
-
-        mouse_pos((500,810)) #сбор палочек
-        time.sleep(.5)
-  
-        if i < 20:
-            i = i+1
-        else:
+            
+        elif is_last():
             i = 0
-            mouse.left_click(1785, 1025)
-            time.sleep(3) #loading next friends
-        
+            
+        else:
+            reload()
+            win32api.Sleep(10000)
+            print(str(datetime.now())[0:19] + ' :reload')
+            screen_grab()
+            f = "overall.png"
+            t = "sample/close_button.png"
+            t2 = "sample/full_screen.png"
+
+            img = cv2.imread(f,cv2.IMREAD_GRAYSCALE)
+            img_tpl = cv2.imread(t,cv2.IMREAD_GRAYSCALE)
+            img_tpl1 = cv2.imread(t2, cv2.IMREAD_GRAYSCALE)
+
+            while True:
+
+                screen_grab()
+                img = cv2.imread(f,cv2.IMREAD_GRAYSCALE)
+
+                try:
+                    coord = find_templ(img, img_tpl)
+                    print(coord)
+                    print("window is closed")
+                    mouse.left_click(coord[0][0], coord[0][1])
+                except:
+                        break
+
+                win32api.Sleep(4000)
+
+
+            try:
+                coord = find_templ( img, img_tpl1 )
+                print(coord)
+                print("window is full")
+                mouse.left_click(coord[0][0], coord[0][1])
+            except:
+                pass
+
+            win32api.Sleep(2000)
+            i = 3
+        change_friend(i) 
 
 if __name__ == '__main__':
     main()
