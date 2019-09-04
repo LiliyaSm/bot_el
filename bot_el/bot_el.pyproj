@@ -23,7 +23,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="bot_el.py" />
-    <Compile Include="module1.py" />
+    <Compile Include="mouse.py" />
     <Compile Include="find_templ.py" />
     <Compile Include="RepeatedTimer.py">
       <SubType>Code</SubType>

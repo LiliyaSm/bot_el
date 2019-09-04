@@ -7,18 +7,19 @@ import os
 import time
 import numpy as np
 from ctypes import windll # решение проблемы с расширением экрана
-import win32api, win32con
 import random
 import logging
 from RepeatedTimer import RepeatedTimer
 import win32com.client
-from find_templ import find_templ
 from datetime import datetime
+from mouse import Mouse
+from find_templ import find_templ
 
 #решение проблемы с расширением экрана
 user32 = windll.user32
 user32.SetProcessDPIAware()
 
+mouse = Mouse()
 
 def screen_grab():
     im = ImageGrab.grab()
@@ -33,60 +34,11 @@ def screen_grab():
     im_question = im.save(os.getcwd() + '\\question_small.png', 'PNG') #
 
 
-class Mouse(object):
-    def __init__(self):
-        self.x_res = win32api.GetSystemMetrics(0)
-        self.y_res = win32api.GetSystemMetrics(1)
-
-    def left_click(self, x, y):
-        nx = int(x*65535/self.x_res)
-        ny = int(y*65535/self.y_res)
-        win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
-        n = random.randint(1700,2000) 
-        print(n)
-        #time.sleep(5)
-        win32api.Sleep(n)   
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)
-        win32api.Sleep(400)
-        #time.sleep(2)
-        print("click")
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)#completely optional. But nice for debugging purposes.
-        win32api.Sleep(200)
-
-    def move(self, x, y):
-        nx = int(x*65535/self.x_res)
-        ny = int(y*65535/self.y_res)
-
-        win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
-        win32api.Sleep(200)
-
-    def drag(self, x, y, x_next, y_next, release):
-        nx = int(x*65535/self.x_res)
-        ny = int(y*65535/self.y_res)
-        win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_MOVE,nx,ny)
-        n = random.randint(700,800) 
-        #time.sleep(5)
-        win32api.Sleep(n)   
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN|win32con.MOUSEEVENTF_ABSOLUTE,x,y,0,0)
-        win32api.Sleep(200)
-        self.move(x_next, y_next)
-        if release:
-            win32api.Sleep(150)
-            win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_LEFTUP,x, y, 0, 0)
-
-    def left_up(self):                
-        win32api.Sleep(150)
-        win32api.mouse_event(win32con.MOUSEEVENTF_ABSOLUTE|win32con.MOUSEEVENTF_LEFTUP, 0, 0)
-
-mouse = Mouse()
-
-def mouse_pos(cord):
-    win32api.SetCursorPos((cord[0], cord[1]))
 
 def reload():
     shell = win32com.client.Dispatch('WScript.Shell')
     shell.SendKeys('{F5}')
-    win32api.Sleep(30000)
+    time.sleep(18)
 
 def tropic_farm(): 
     mouse.left_click(60, 410)
@@ -100,46 +52,58 @@ def tropic_farm():
     while True:        
         #index = list.index(random.choice(list))
         #print(random.choice(list))
-        print(list)
+        print('tropic_game')
         if list:
             cords = (list.pop())
             mouse.move(cords[0], cords[1])
         else:
             mouse.left_up()
             break
-
-    mouse.left_click(1100, 440)
-    mouse.left_click(1100, 540)
-    mouse.left_click(1100, 640)
-
-    mouse.left_click(1315, 440)
-    mouse.left_click(1315, 540)
-    mouse.left_click(1315, 640)
-
-    mouse.left_click(1510, 230)
     
+    for i in range(1100,1500, 200):
+        for j in range(440,740, 100):
+            mouse.left_click(i, j)
 
+    close_window() #mouse.left_click(1510, 230)
 
-
-def get_cords():  #вывод координат в консоль
-    x,y = win32api.GetCursorPos()
-    print (x,y)
 
 def comparison(box, name, path):
-    #name - name of large_image
-    #path - path to sample "sample\\question_sample.png"
+    #name - name of image for checking (button0, button1)
+    #path - path to sample "sample\\button_sample.png"
     im = ImageGrab.grab(box).save(os.getcwd() + '\\' + name, "PNG")   
+
     method = cv2.TM_SQDIFF_NORMED
     large_image = cv2.imread(name)
     sample_IMG = cv2.imread(path)  
     result = cv2.matchTemplate(sample_IMG, large_image, method)
     return result
 
-def is_mine():    
+
+def comparison2(name, sample_name):
+    #name - name of large_image
+    #sample_name - path to sample "sample\\question_sample.png"
+
     method = cv2.TM_SQDIFF_NORMED
-    large_image = cv2.imread("my.png")
-    sample_my = cv2.imread("sample\\my_sample.png") 
-    result = cv2.matchTemplate(sample_my, large_image, method)
+    large_image = cv2.imread(name)
+    sample_IMG = cv2.imread(sample_name)  
+    result = cv2.matchTemplate(sample_IMG, large_image, method)
+    return result
+
+def coord_sample(name):
+    """
+    name - name of sample
+    return 4 coords of sample on overall screen
+    """
+    screen_grab()
+    img = cv2.imread("overall.png",cv2.IMREAD_GRAYSCALE)
+    img_tpl1 = cv2.imread(name,cv2.IMREAD_GRAYSCALE) 
+
+    coord = find_templ(img, img_tpl1)
+    print(coord)
+    return (coord[0][0] + coord[0][2]//2, coord[0][1] + coord[0][3]//2)
+
+def is_mine():    
+    result =  comparison2("my.png", "sample\\my_sample.png")
     #print(result[0][0])
     if (result[0][0] < 0.05):
         print("MY")
@@ -148,11 +112,23 @@ def is_mine():
 
 def check_buttons(buttons):
     for i in range(3):
+
         result = comparison(buttons[i], "button.png", "sample\\speed_up.png")            
         print(result[0][0])
         if (result[0][0] > 0.1): #if there is no overlap
             mouse.left_click(buttons[i][0], buttons[i][1]) #press the button
             time.sleep(2)
+
+def close_window():
+    while True:
+        try:
+            coord = coord_sample("sample/close_button.png") 
+            print(coord)
+            print("window is closed")
+            mouse.left_click(coord[0], coord[1])
+            time.sleep(2)
+        except:
+            break
 
 def checking_cafe():
     name = 'checking_cafe.png'
@@ -166,7 +142,7 @@ def checking_cafe():
         time.sleep(.5)
         buttons = [(616, 493, 730, 525), (616, 642, 730, 675), (616, 792, 730, 825)]
         check_buttons(buttons)
-        mouse.left_click(1505,210) #close window
+        close_window() # or ouse.left_click(1505,210) close window
         time.sleep(2)
         return True
     return False
@@ -183,7 +159,7 @@ def checking_factory():
         time.sleep(.5)
         buttons = [(964, 785, 1077, 816), (1149, 785, 1262, 816), (1337, 785, 1450, 816)]
         check_buttons(buttons)
-        mouse.left_click(1505,210) #close window
+        close_window() # or mouse.left_click(1505,210) #close window
         time.sleep(2)
         return True
     return False
@@ -194,8 +170,9 @@ def check_feeding():
     time.sleep(2)
     buttons = [(853, 748, 963, 779), (1051, 748, 1164, 779), (1245, 748, 1358, 779)]
     check_buttons(buttons)
+
     mouse.left_click(960, 831) # click in case of level up
-    mouse.left_click(1425,205) #close window
+    close_window() #mouse.left_click(1425,205) close window
 
 def check_missions():
     time.sleep(2)
@@ -220,19 +197,16 @@ def check_missions():
                time.sleep(2)
                mouse.left_click(963,803)
 
-        mouse.left_click(1425,205) #close window
+        close_window() #mouse.left_click(1425,205) close window
 
 def is_last(): 
-    method = cv2.TM_SQDIFF_NORMED
-    large_image = cv2.imread("my.png")
-    sample_end = cv2.imread("sample\\friends_end.png")
-    result1 = cv2.matchTemplate(sample_end, large_image, method)
-
-    if (result1[0][0] < 0.1):
+    result =  comparison2("my.png", "sample\\friends_end.png")  
+    if (result[0][0] < 0.1):
         mouse.left_click(920, 722) # it could be the chest message
-        mouse.left_click(1315, 303) #1025, 1785 close friend warning window
-        time.sleep(2)
-        mouse.left_click(126, 1053)
+        #mouse.left_click(1315, 303) #1025, 1785 close friend warning window
+        #time.sleep(2)
+        close_window()
+        mouse.left_click(126, 1053) #rewind friend list to the 1st friend
         time.sleep(2)
         return True
 
@@ -250,7 +224,6 @@ def is_friend():
 
 
 def change_friend(i):
-
     position = (210+i*75, 1015) # delta = i*75 1st friend, overall = 15
     mouse.left_click(position[0], position[1])
     n = random.randint(3,6) 
@@ -284,15 +257,10 @@ def change_i(i):
    
 
 def check_question():
-    mouse_pos((500,810)) #сбор палочек
+    mouse.mouse_pos((500,810)) #сбор палочек
     time.sleep(.5)
 
-    method = cv2.TM_SQDIFF_NORMED
-    large_image = cv2.imread("question_small.png")
-    sampleIMG = cv2.imread("sample\\question_sample.png")
-    method = cv2.TM_SQDIFF_NORMED    
-    result = cv2.matchTemplate(sampleIMG, large_image, method)
-    print(result[0][0])
+    result = comparison2("question_small.png", "sample\\question_sample.png")
 
     if (result[0][0] < 0.05):
         print("OPEN")
@@ -302,14 +270,14 @@ def check_question():
 
 class GameLogic(object):
     def __init__(self):
-        self._flag = False
+        self._flag = True
         
     def change_glade(self):
         self._flag = True # its time to check another glade
         print(self._flag)
     
     def run(self):
-        rt = RepeatedTimer(5400, self.change_glade) # it auto-starts, no need of rt.start()
+        rt = RepeatedTimer(1800, self.change_glade) # it auto-starts, no need of rt.start()
         if self._flag:
             print(time.localtime())   
             buttons = [(645, 430) , (840, 425), (1060, 460), (1272, 453)]
@@ -328,6 +296,8 @@ class GameLogic(object):
             self._flag = False
 
 game = GameLogic()
+
+
 
 def main():
     i = 0
@@ -361,42 +331,24 @@ def main():
             
         else:
             reload()
-            win32api.Sleep(10000)
             print(str(datetime.now())[0:19] + ' :reload')
-            screen_grab()
+            close_window()
+            screen_grab()            
             f = "overall.png"
-            t = "sample/close_button.png"
             t2 = "sample/full_screen.png"
 
             img = cv2.imread(f,cv2.IMREAD_GRAYSCALE)
-            img_tpl = cv2.imread(t,cv2.IMREAD_GRAYSCALE)
             img_tpl1 = cv2.imread(t2, cv2.IMREAD_GRAYSCALE)
 
-            while True:
+            time.sleep(4)
 
-                screen_grab()
-                img = cv2.imread(f,cv2.IMREAD_GRAYSCALE)
-
-                try:
-                    coord = find_templ(img, img_tpl)
-                    print(coord)
-                    print("window is closed")
-                    mouse.left_click(coord[0][0], coord[0][1])
-                except:
-                        break
-
-                win32api.Sleep(4000)
-
-
-            try:
-                coord = find_templ( img, img_tpl1 )
-                print(coord)
-                print("window is full")
+            coord = find_templ( img, img_tpl1 )
+            print(coord, "full")
+            if coord:                
                 mouse.left_click(coord[0][0], coord[0][1])
-            except:
-                pass
-
-            win32api.Sleep(2000)
+                print("window is full")
+                               
+            time.sleep(2)
             i = 3
         change_friend(i) 
 
